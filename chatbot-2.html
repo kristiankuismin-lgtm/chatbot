@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adaptyv — AI Support (Concept)</title>
+<meta property="og:title" content="Adaptyv AI Support — Concept">
+<meta property="og:description" content="Instant AI answers, 24/7, with smart handoff to the team when needed.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--blue:#0E7FD1;--blue-d:#0A66AD;--g:#1D9E75;--gl:#E1F5EE;--gd:#0F6E56;--t:#1a1a1a;--t2:#666;--t3:#999;--b:#e5e5e5;--bg:#f4f6f8;}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;background:var(--bg);height:100%;}
+body{display:flex;align-items:center;justify-content:center;padding:1.5rem;min-height:100vh;}
+
+.adaptyv-logo{position:fixed;top:18px;left:18px;display:flex;align-items:center;gap:8px;z-index:50;}
+.adaptyv-logo svg{height:28px;}
+@media(max-width:480px){.adaptyv-logo{display:none;}}
+
+
+/* --- Bubble launcher --- */
+.launcher{position:fixed;bottom:24px;right:24px;height:54px;padding:0 20px 0 14px;border-radius:30px;background:linear-gradient(135deg,var(--blue),var(--blue-d));display:flex;align-items:center;gap:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 6px 24px rgba(14,127,209,.35);z-index:100;transition:transform .15s;}
+.launcher .av{width:34px;height:34px;border-radius:50%;background:#fff;flex-shrink:0;}
+.launcher:hover{transform:scale(1.06);}
+.launcher.hidden{display:none;}
+.unread{position:absolute;top:-4px;right:-4px;background:#FF5252;color:#fff;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+
+/* --- Widget --- */
+.widget{width:390px;max-width:100%;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.14);overflow:hidden;display:flex;flex-direction:column;height:640px;position:fixed;bottom:24px;right:24px;z-index:99;}
+.widget.hidden{display:none;}
+@media(max-width:480px){
+  .widget{width:100%;height:100%;border-radius:0;bottom:0;right:0;top:0;}
+}
+
+.hdr{background:linear-gradient(135deg,var(--blue),var(--blue-d));color:#fff;padding:18px 20px;flex-shrink:0;}
+.hdr-top{display:flex;align-items:center;gap:10px;margin-bottom:2px;}
+.hdr-back{font-size:20px;opacity:.85;cursor:pointer;}
+.hdr-title{font-size:18px;font-weight:700;flex:1;}
+.hdr-icon{font-size:17px;opacity:.85;cursor:pointer;}
+.hdr-sub{font-size:13px;opacity:.92;}
+.hdr-live{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;background:rgba(255,255,255,.18);padding:3px 9px;border-radius:20px;margin-top:8px;}
+.dot{width:6px;height:6px;border-radius:50%;background:#7CFFB2;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+#settings{display:none;padding:12px 16px;background:#FFF7E6;border-bottom:1px solid #FFE0A3;font-size:12px;color:#8A5800;flex-shrink:0;}
+#settings .row{display:flex;gap:6px;margin-top:6px;}
+#settings input{flex:1;padding:6px 9px;font-size:12px;border:1px solid #FFE0A3;border-radius:6px;outline:none;}
+#settings button{background:var(--blue);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;}
+#settings a{color:#8A5800;}
+#settings .clear{background:#fff;color:#8A5800;border:1px solid #FFE0A3;margin-left:4px;}
+
+.body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:#fff;}
+
+.msg{display:flex;gap:8px;align-items:flex-start;}
+.msg.u{flex-direction:row-reverse;}
+.av{width:26px;height:26px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.av.u{background:var(--blue);}
+.bbl{background:#f0f1f3;border-radius:0 12px 12px 12px;padding:10px 14px;font-size:14px;line-height:1.5;max-width:80%;color:var(--t);white-space:pre-wrap;}
+.bbl.u{background:var(--blue);color:#fff;border-radius:12px 0 12px 12px;}
+.time{font-size:11px;color:var(--t3);margin-top:4px;}
+.col{display:flex;flex-direction:column;min-width:0;}
+
+.qa-actions{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-width:240px;}
+.qa-btn{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:20px;border:1px solid var(--b);background:#fff;color:var(--blue-d);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;text-align:left;}
+.qa-btn:hover{background:var(--bg);border-color:var(--blue);}
+.qa-btn i{font-size:15px;}
+.fchip{font-size:12px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid var(--b);color:var(--blue-d);cursor:pointer;transition:.15s;}
+.fchip:hover{background:var(--bg);}
+
+.handoff{background:#FFF7E6;border:1px solid #FFE0A3;border-radius:10px;padding:12px 14px;font-size:13px;color:#8A5800;line-height:1.5;}
+.handoff b{display:block;margin-bottom:4px;}
+.handoff-form{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
+.handoff-form input{padding:7px 10px;font-size:12px;border:1px solid #FFE0A3;border-radius:6px;outline:none;}
+.handoff-btn{margin-top:2px;background:var(--blue);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
+.handoff-btn:hover{background:var(--blue-d);}
+.handoff-done{background:var(--gl);border:1px solid var(--gm);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--gd);line-height:1.5;}
+
+.typing{display:flex;gap:4px;padding:10px 14px;background:#f0f1f3;border-radius:0 12px 12px 12px;width:fit-content;}
+.typing span{width:6px;height:6px;border-radius:50%;background:#bbb;animation:bounce 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:.2s;}
+.typing span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-4px);}}
+
+.footer{border-top:1px solid var(--b);padding:10px 12px;flex-shrink:0;}
+.input-row{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:10px;padding:4px 4px 4px 12px;}
+.input-row input{flex:1;border:none;background:transparent;font-size:14px;outline:none;padding:8px 0;color:var(--t);}
+.input-row button{width:34px;height:34px;border-radius:8px;border:none;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.input-row button:hover{background:var(--blue-d);}
+.input-row button:disabled{opacity:.4;cursor:default;}
+.powered{text-align:center;font-size:11px;color:var(--t3);padding:8px 0 2px;}
+.powered b{color:var(--blue);}
+.powered .reset{margin-left:8px;cursor:pointer;text-decoration:underline;}
+
+.suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;flex-shrink:0;}
+.sug{font-size:12px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid var(--b);color:var(--t2);cursor:pointer;transition:.15s;}
+.sug:hover{background:var(--bg);}
+</style>
+</head>
+<body>
+
+<div class="adaptyv-logo">
+  <svg viewBox="0 0 220 50" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#3FA9E8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M25 8 L42 18 L42 38 L25 48 L25 28 Z"/>
+      <path d="M25 8 L8 18 L8 38 L25 48"/>
+      <path d="M8 18 L42 38"/>
+    </g>
+    <text x="58" y="35" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="28" font-weight="600" fill="#1A2B3C">Adaptyv</text>
+  </svg>
+</div>
+
+<div class="context">
+  <b>Concept:</b> AI-first replacement for the Atlas "Need help?" widget — instant 24/7 answers, conversation memory, follow-up suggestions, and smart handoff with contact capture when a human is needed.
+</div>
+
+<div class="launcher" id="launcher" onclick="openWidget()">
+  <svg class="av" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <rect width="40" height="40" rx="20" fill="#EAF4FF"/>
+    <rect x="9" y="13" width="22" height="16" rx="6" fill="#0E7FD1"/>
+    <circle cx="15.5" cy="21" r="2.4" fill="#fff"/>
+    <circle cx="24.5" cy="21" r="2.4" fill="#fff"/>
+    <rect x="18" y="7" width="4" height="6" rx="2" fill="#0E7FD1"/>
+    <circle cx="20" cy="6" r="2.2" fill="#0E7FD1"/>
+  </svg>
+  Ask anything
+  <span class="unread" id="unread" style="display:none;">1</span>
+</div>
+
+<div class="widget" id="widget">
+  <div class="hdr">
+    <div class="hdr-top">
+      <span class="hdr-back" onclick="closeWidget()"><i class="ti ti-chevron-left"></i></span>
+      <span class="hdr-title">Need help?</span>
+      <span class="hdr-icon" onclick="toggleSettings()" title="Settings"><i class="ti ti-settings"></i></span>
+    </div>
+    <div class="hdr-sub">Ask me anything — I'm here 24/7</div>
+    <div class="hdr-live"><span class="dot"></span> AI online · replies instantly</div>
+  </div>
+
+  <div id="settings">
+    <div>Enter your Anthropic API key for live AI replies (stored only in your browser).</div>
+    <div class="row">
+      <input type="password" id="apiKey" placeholder="sk-ant-...">
+      <button onclick="saveKey()">Save</button>
+      <button class="clear" onclick="clearKey()">Clear</button>
+    </div>
+    <div style="margin-top:6px;"><a href="https://console.anthropic.com/settings/keys" target="_blank">Get a free API key →</a></div>
+  </div>
+
+  <div class="body" id="body"></div>
+
+  <div class="suggestions" id="suggestions">
+    <span class="sug" onclick="qa('Where do I find proteins / how do I submit sequences?')">Where do I find proteins?</span>
+    <span class="sug" onclick="qa('What assays do you offer and how much do they cost?')">Pricing & assays</span>
+    <span class="sug" onclick="qa('How long does an experiment take?')">Turnaround time</span>
+  </div>
+
+  <div class="footer">
+    <div class="input-row">
+      <input type="text" id="inp" placeholder="Write a message..." onkeydown="if(event.key==='Enter')send()">
+      <button onclick="send()" id="sendBtn"><i class="ti ti-send" style="font-size:15px;"></i></button>
+    </div>
+    <div class="powered">Powered by <b>Adaptyv AI</b> · escalates to team when needed <span class="reset" onclick="resetChat()">Reset chat</span></div>
+  </div>
+</div>
+
+<script>
+let hist = JSON.parse(localStorage.getItem('adaptyvChatHist') || 'null');
+const STORAGE_KEY='adaptyvChatHist';
+
+const SYS=`You are the AI support assistant on Adaptyv Bio's website (replacing a slow human-staffed Atlas chat widget). Adaptyv is the cloud lab for protein designers, based at Biopole Life Science Campus, Epalinges, Lausanne, Switzerland. Founded by Julian Englert (CEO) and Daniel Nakhaee-Zadeh (CTO). Mission: make proteins easier to engineer — the fastest protein validation lab in the world, sequence to experimental data in under 3 weeks.
+
+=== SERVICES ===
+
+EXPRESSION (from $49/protein at high volume; $79/protein at the 24-96 protein tier):
+- Speed: 2-3 weeks
+- Output: expression levels, solubility, yield metrics (Low/Medium/High classification)
+- High-throughput cell-free expression analysis across hundreds/thousands of variants
+- Two expression systems available: E. coli and Yeast cell-free systems — customer can choose or compare both
+- Screening via split-GFP method (fast) or detailed yield quantification via Capillary Electrophoresis + Quant-iT assay
+- Optional SEC (size-exclusion chromatography) to check monomeric vs oligomeric state
+- Supports peptides, miniproteins, natural ligands, Fab antibody formats
+- Replicates: duplicate (2x) included in base price; triplicate/4x/5x available
+- Timeline: Day 0 submission → Day 1-7 DNA construct design/ordering → Day 8-9 expression+QC → Day 10-12 yield quantification → Day 13-14 data review & release
+
+BINDING AFFINITY (from $99/protein at high volume; $169/protein at the 24-96 protein tier; includes expression):
+- Speed: 3-4 weeks
+- Output: binding classification (Yes/No), kinetic curves, kinetic constants (KD, Kon, Koff — full affinity only), expression yields
+- Two modes: "Basic Binding Screening" (2 concentrations, Yes/No + curves, no precise KD, recommended for quick screening) or "Full Affinity Characterization" (4+ concentrations, precise kinetic constants)
+- Uses Gator Bio for BLI and Carterra for SPR — state-of-the-art label-free biophysical characterization
+- Supports peptides, miniproteins, natural ligands, VHHs, scFvs, Fabs
+- 90%+ expression success rate across thousands of proteins/month
+- Targets: browse the target catalog at targets.adaptyvbio.com (nearly any soluble commercially-available protein), or Adaptyv can custom-express/source proprietary targets
+- Replicates: duplicate included; up to 5x available
+- Number of targets: can test against 1, 2, 3, 4+ targets
+- Timeline: Day 0 submission → Day 1-7 DNA construct ordering + target sourcing/QC → Day 8-9 protein expression → Day 10-15 kinetic measurements → Day 16-21 data review & release
+
+THERMOSTABILITY (from $99/protein at high volume; $169/protein at the 24-96 protein tier; includes expression):
+- Speed: 2-3 weeks
+- Output: melting curves, Tm values, aggregation data
+- Uses nanoDSF (intrinsic fluorescence) — proteins need a hydrophobic core with aromatic residues (Trp/Tyr) to be measurable
+- Can screen across different conditions: pH, salt, buffer, excipients, ligand additions, and their effect on Tm/aggregation
+- Replicates: single included; duplicate/triplicate/4x available
+- Timeline: Day 0 submission → Day 1-7 DNA construct design → Day 8-9 expression/purification/QC → Day 10-12 melting curve measurements → Day 13-14 data review & release
+
+PRICING NOTES:
+- All "from" prices reflect high-volume tiers (384-768 proteins). At smaller batch sizes (24-96 proteins, "T2" tier) per-protein price is higher — e.g. binding/thermostability ~$169/protein and expression ~$79/protein at 60 proteins.
+- Available batch sizes: 24, 48, 96, 192, 384, 768 proteins
+- Volume discounts scale automatically as batch size increases
+- Publishing results openly on Proteinbase (proteinbase.com/publish) gives a 20% discount
+
+=== SUBMISSION PROCESS ===
+- Create a free Foundry account at foundry.adaptyvbio.com
+- Upload protein sequences digitally (FASTA format, one per entry, clear naming like binder_001, max ~1000 amino acids)
+- Choose assay type, resolution, replicates, target(s), batch size
+- Get instant price estimate, place order
+- All experiment management, progress tracking, and results happen in Foundry — no more emailing CROs or wrangling spreadsheets
+
+=== API & INTEGRATIONS ===
+- Full API lets AI agents submit protein designs and retrieve experimental data programmatically — closing the design-test loop
+- API docs: docs.adaptyvbio.com/api-reference
+- Live integrations: Benchling (one-click ordering from Benchling projects), Tamarind Bio (order Adaptyv assays from Tamarind's design workflow)
+- "Apply to partner program" available for companies wanting deeper integration
+
+=== TRUST & CUSTOMERS ===
+Used and validated by MIT, Harvard, EPFL, Microsoft Research, Chai Discovery, Cradle, Escalante Bio, BindCraft, Boltz, Tamarind Bio, Phylo, Benchling.
+Notable case studies: Microsoft (validating EvoDiff-generated proteins), Chai Discovery (benchmarking Chai-2 zero-shot design), Cradle (optimizing EGFR antibodies via the Adaptyv EGFR Design Competition), Escalante (multi-objective minibinder design vs PD-L1 and IL7RA).
+
+=== BLOG ===
+Recent posts at adaptyvbio.com/blog include:
+- "Can LLMs design proteins?" — exploring AI agents vs humans in protein design
+- "Test proteins with Adaptyv directly from Benchling" — the Benchling integration announcement
+- "Adaptyv API: Giving everyone access to a real lab" — introducing the API for programmatic lab access
+
+=== COMPANY ===
+- Investors: ACE Ventures, byFounders, Founderful, Y Combinator
+- Blog topics include: AI agents vs humans in protein design, Benchling integration, the Adaptyv API
+- Proteinbase (proteinbase.com) — open protein data platform, related project
+- Academic institutions may qualify for special pricing — direct them to contact the team
+- Contact: support@adaptyvbio.com
+
+=== CURRENT USER CONTEXT ===
+{CTX}
+
+=== RESPONSE FORMAT ===
+Respond with a JSON object only, no markdown fences, structured exactly like this:
+{"reply": "your 2-3 sentence plain-text answer", "followups": ["short follow-up question 1", "short follow-up question 2"], "handoff": false}
+
+- "followups": 0-2 short, natural follow-up questions the user might ask next. Omit or use [] if none make sense (e.g. after a handoff).
+- "handoff": true ONLY for things you can't answer from the above — specific order status, account/billing issues, custom contracts, deep science questions beyond these facts, complaints. When true, "reply" is a short one-sentence explanation of what you'll pass to the team, and "followups" is [].
+- Most questions about services, pricing, process, timelines, API, and integrations you CAN and SHOULD answer yourself.
+
+Be warm and concise. Always return valid JSON, nothing else.`;
+
+function saveHist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(hist)); }
+
+function toggleSettings(){
+  const el=document.getElementById('settings');
+  el.style.display = el.style.display==='none'||!el.style.display ? 'block' : 'none';
+  const k=localStorage.getItem('anthropicApiKey');
+  if(k) document.getElementById('apiKey').value=k;
+}
+function saveKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  if(k){ localStorage.setItem('anthropicApiKey', k); document.getElementById('settings').style.display='none'; }
+}
+function clearKey(){
+  localStorage.removeItem('anthropicApiKey');
+  document.getElementById('apiKey').value='';
+}
+
+function openWidget(){
+  document.getElementById('widget').classList.remove('hidden');
+  document.getElementById('launcher').classList.add('hidden');
+  document.getElementById('unread').style.display='none';
+}
+function closeWidget(){
+  document.getElementById('widget').classList.add('hidden');
+  document.getElementById('launcher').classList.remove('hidden');
+}
+
+function resetChat(){
+  hist=null;
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('body').innerHTML='';
+  document.getElementById('suggestions').style.display='flex';
+  showWelcome();
+}
+
+function showWelcome(){
+  appendAI({reply:"How can I help you today?", followups:[]}, false);
+  const body=document.getElementById('body');
+  const wrap=document.createElement('div');
+  wrap.className='qa-actions';
+  wrap.id='qa-actions';
+  wrap.innerHTML=`
+    <button class="qa-btn" onclick="startLiveChat()"><i class="ti ti-headset"></i> Talk to a live person</button>
+    <button class="qa-btn" onclick="qa('What assays do you offer and how much do they cost?')"><i class="ti ti-flask"></i> Services & pricing</button>
+    <button class="qa-btn" onclick="qa('How do I get started and submit my first protein sequences?')"><i class="ti ti-rocket"></i> Get started</button>
+  `;
+  body.appendChild(wrap);
+  body.scrollTop=body.scrollHeight;
+}
+
+function removeQaActions(){
+  const el=document.getElementById('qa-actions');
+  if(el) el.remove();
+}
+
+function startLiveChat(){
+  removeQaActions();
+  document.getElementById('suggestions').style.display='none';
+  appendUser("Talk to a live person");
+  appendAI({reply:"Sure — let's get you connected with the Adaptyv team. Just share your name and email below.", followups:[], handoff:true}, true);
+}
+
+function renderBubble(role, text, time){
+  const body=document.getElementById('body');
+  const row=document.createElement('div');
+  row.className='msg'+(role==='u'?' u':'');
+  const av=document.createElement('div');
+  av.className='av'+(role==='u'?' u':'');
+  av.innerHTML=role==='ai'
+    ? '<i class="ti ti-dna" style="font-size:13px;color:#0F6E56;"></i>'
+    : '<i class="ti ti-user" style="font-size:12px;color:#fff;"></i>';
+  const col=document.createElement('div');
+  col.className='col';
+  const bbl=document.createElement('div');
+  bbl.className='bbl'+(role==='u'?' u':'');
+  bbl.textContent=text;
+  const t=document.createElement('div');
+  t.className='time';
+  t.style.textAlign = role==='u' ? 'right' : 'left';
+  t.textContent=time;
+  col.appendChild(bbl);
+  col.appendChild(t);
+  if(role==='u'){row.appendChild(col);row.appendChild(av);}
+  else{row.appendChild(av);row.appendChild(col);}
+  body.appendChild(row);
+  body.scrollTop=body.scrollHeight;
+  return {row,col,bbl};
+}
+
+function appendUser(text){
+  renderBubble('u', text, nowTime());
+}
+
+function nowTime(){
+  return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function appendTyping(){
+  const body=document.getElementById('body');
+  const row=document.createElement('div');
+  row.className='msg';
+  row.id='typing-row';
+  row.innerHTML=`<div class="av"><i class="ti ti-dna" style="font-size:13px;color:#0F6E56;"></i></div>
+  <div class="typing"><span></span><span></span><span></span></div>`;
+  body.appendChild(row);
+  body.scrollTop=body.scrollHeight;
+}
+function removeTyping(){
+  const el=document.getElementById('typing-row');
+  if(el) el.remove();
+}
+
+function appendAI(parsed, isHandoff){
+  const body=document.getElementById('body');
+  if(isHandoff){
+    const row=document.createElement('div');
+    row.className='msg';
+    row.innerHTML=`<div class="av"><i class="ti ti-dna" style="font-size:13px;color:#0F6E56;"></i></div>
+    <div class="col" style="flex:1;">
+      <div class="handoff">
+        <b>I'll connect you with the team</b>
+        <span class="ho-text"></span>
+        <div class="handoff-form" id="ho-form-${Date.now()}">
+          <input type="text" class="ho-name" placeholder="Your name">
+          <input type="email" class="ho-email" placeholder="Your email">
+          <button class="handoff-btn">Send to the team →</button>
+        </div>
+      </div>
+      <div class="time">${nowTime()}</div>
+    </div>`;
+    row.querySelector('.ho-text').textContent=parsed.reply;
+    const form=row.querySelector('.handoff-form');
+    const btn=row.querySelector('.handoff-btn');
+    btn.onclick=function(){
+      const name=form.querySelector('.ho-name').value.trim();
+      const email=form.querySelector('.ho-email').value.trim();
+      if(!name||!email){ alert('Please add your name and email so the team can reach you.'); return; }
+      form.outerHTML=`<div class="handoff-done"><i class="ti ti-circle-check" style="margin-right:4px;"></i>Thanks ${name}! The Adaptyv team will email <strong>${email}</strong> within a few hours (CET business hours).</div>`;
+    };
+    body.appendChild(row);
+  } else {
+    const {col} = renderBubble('ai', parsed.reply, nowTime());
+    if(parsed.followups && parsed.followups.length){
+      const fw=document.createElement('div');
+      fw.className='followups';
+      parsed.followups.forEach(q=>{
+        const c=document.createElement('span');
+        c.className='fchip';
+        c.textContent=q;
+        c.onclick=()=>qa(q);
+        fw.appendChild(c);
+      });
+      col.appendChild(fw);
+    }
+  }
+  body.scrollTop=body.scrollHeight;
+}
+
+async function send(){
+  const inp=document.getElementById('inp');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value='';
+  document.getElementById('suggestions').style.display='none';
+  removeQaActions();
+  appendUser(text);
+  if(!hist) hist=[];
+  hist.push({role:'user',content:text});
+  saveHist();
+  appendTyping();
+  document.getElementById('sendBtn').disabled=true;
+
+  const apiKey = localStorage.getItem('anthropicApiKey');
+  if(!apiKey){
+    removeTyping();
+    appendAI({reply:"To enable live AI replies, click the settings icon (top right) and add your Anthropic API key. You can get a free key at console.anthropic.com.", followups:[]}, false);
+    document.getElementById('sendBtn').disabled=false;
+    return;
+  }
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:SYS.replace('{CTX}', 'No special context — general visitor.'),messages:hist})
+    });
+    const d=await r.json();
+    removeTyping();
+    if(d.error){
+      appendAI({reply:"API error: "+d.error.message, followups:[]}, false);
+      document.getElementById('sendBtn').disabled=false;
+      return;
+    }
+    const raw=d.content.map(b=>b.text||'').join('');
+    let parsed;
+    try{
+      const clean=raw.replace(/```json|```/g,'').trim();
+      parsed=JSON.parse(clean);
+    }catch(e){
+      parsed={reply: raw, followups: [], handoff: false};
+    }
+    appendAI(parsed, !!parsed.handoff);
+    hist.push({role:'assistant',content:raw});
+    saveHist();
+  } catch(e){
+    removeTyping();
+    appendAI({reply:"Sorry, something went wrong on my end. Please try again in a moment.", followups:[]}, false);
+  }
+  document.getElementById('sendBtn').disabled=false;
+}
+
+function qa(q){
+  document.getElementById('inp').value=q;
+  send();
+}
+
+// --- Init ---
+if(hist && hist.length){
+  document.getElementById('suggestions').style.display='none';
+  hist.forEach(m=>{
+    if(m.role==='user'){
+      renderBubble('u', m.content, '');
+    } else {
+      let parsed;
+      try{ parsed=JSON.parse(m.content.replace(/```json|```/g,'').trim()); }
+      catch(e){ parsed={reply:m.content, followups:[], handoff:false}; }
+      appendAI(parsed, !!parsed.handoff);
+    }
+  });
+} else {
+  showWelcome();
+}
+</script>
+</body>
+</html>
