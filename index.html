@@ -90,7 +90,8 @@ body{display:flex;align-items:center;justify-content:center;padding:1.5rem;min-h
 .input-row button:disabled{opacity:.4;cursor:default;}
 .powered{text-align:center;font-size:11px;color:var(--t3);padding:8px 0 2px;}
 .powered b{color:var(--blue);}
-.powered .reset{margin-left:8px;cursor:pointer;text-decoration:underline;}
+.powered .reset{margin-left:8px;cursor:pointer;text-decoration:underline;white-space:nowrap;}
+.bbl code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:13px;}
 
 .suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;flex-shrink:0;}
 .sug{font-size:12px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid var(--b);color:var(--t2);cursor:pointer;transition:.15s;}
@@ -270,6 +271,7 @@ function openWidget(){
   document.getElementById('widget').classList.remove('hidden');
   document.getElementById('launcher').classList.add('hidden');
   document.getElementById('unread').style.display='none';
+  setTimeout(()=>document.getElementById('inp').focus(),50);
 }
 function closeWidget(){
   document.getElementById('widget').classList.add('hidden');
@@ -324,7 +326,7 @@ function renderBubble(role, text, time){
   col.className='col';
   const bbl=document.createElement('div');
   bbl.className='bbl'+(role==='u'?' u':'');
-  bbl.textContent=text;
+  bbl.innerHTML=mdInline(text);
   const t=document.createElement('div');
   t.className='time';
   t.style.textAlign = role==='u' ? 'right' : 'left';
@@ -344,6 +346,13 @@ function appendUser(text){
 
 function nowTime(){
   return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function mdInline(s){
+  return esc(s)
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>');
 }
 
 function appendTyping(){
@@ -438,7 +447,7 @@ async function send(){
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:SYS.replace('{CTX}', 'No special context — general visitor.'),messages:hist})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system:SYS.replace('{CTX}', 'No special context — general visitor.'),messages:hist})
     });
     const d=await r.json();
     removeTyping();
@@ -471,6 +480,8 @@ function qa(q){
 }
 
 // --- Init ---
+// Drop any trailing user message that never got an answer (avoids a dead-end open state)
+if(hist){ while(hist.length && hist[hist.length-1].role==='user'){ hist.pop(); } saveHist(); }
 if(hist && hist.length){
   document.getElementById('suggestions').style.display='none';
   hist.forEach(m=>{
